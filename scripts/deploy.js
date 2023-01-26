@@ -3,9 +3,12 @@
 
 const { getSelectors, FacetCutAction } = require('./libraries/diamond.js')
 
+const MAX_UINT = 2**256 - 1
+
 async function deployDiamond () {
   const accounts = await ethers.getSigners()
   const contractOwner = accounts[0]
+  const admin = contractOwner;
 
   // deploy DiamondCutFacet
   const DiamondCutFacet = await ethers.getContractFactory('DiamondCutFacet')
@@ -18,7 +21,6 @@ async function deployDiamond () {
   const diamond = await Diamond.deploy(contractOwner.address, diamondCutFacet.address)
   await diamond.deployed()
   console.log('Diamond deployed:', diamond.address)
-
 
   // deploy MockERC721
   const MockERC721 = await ethers.getContractFactory('MockERC721')
@@ -44,6 +46,22 @@ async function deployDiamond () {
   await mockERC20.deployed()
   console.log('MockERC20 deployed:', mockERC20.address)
 
+  // initialize mockTerminus
+  await mockTerminus.setPaymentToken(mockERC20.address)
+  await mockTerminus.setPoolBasePrice(1)
+
+  // approve and mint mockERC20
+  await mockERC20.mint(admin.address, 999999)
+  await mockERC20.approve(mockTerminus.address, 999999)
+
+  // create pool
+  await mockTerminus.createPoolV1(1, false, true)
+
+  // mint admin badge to administrator account
+  const adminTerminusPoolId = await mockTerminus.totalPools()
+  console.log('adminTerminusPoolId: ', adminTerminusPoolId)
+
+  await mockTerminus.mint(admin.address, 1, 1, [])
 
   // deploy DiamondInit
   // DiamondInit provides a function that is called when the diamond is upgraded to initialize state variables
@@ -58,7 +76,8 @@ async function deployDiamond () {
   console.log('Deploying facets')
   const FacetNames = [
     'DiamondLoupeFacet',
-    'OwnershipFacet'
+    'OwnershipFacet',
+    'InventoryFacet'
   ]
   const cut = []
   for (const FacetName of FacetNames) {
@@ -66,10 +85,18 @@ async function deployDiamond () {
     const facet = await Facet.deploy()
     await facet.deployed()
     console.log(`${FacetName} deployed: ${facet.address}`)
+
+    let selectors = getSelectors(facet)
+
+    // remove duplicate function from InventoryFacet
+    if (FacetName === "InventoryFacet") {
+      selectors = getSelectors(facet).remove(['supportsInterface(bytes4)'])
+    }
+
     cut.push({
       facetAddress: facet.address,
       action: FacetCutAction.Add,
-      functionSelectors: getSelectors(facet)
+      functionSelectors: selectors
     })
   }
 
