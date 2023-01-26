@@ -26,12 +26,23 @@ async function deployDiamond () {
   await mockERC721.deployed()
   console.log('MockERC721 deployed:', mockERC721.address)
 
+  // deploy another instance of MockERC721: MockERC721_Item
+  const MockERC721_Item = await ethers.getContractFactory('MockERC721')
+  const mockERC721_Item = await MockERC721_Item.deploy()
+  await mockERC721_Item.deployed()
+  console.log('MockERC721_Item deployed:', mockERC721_Item.address)
+
   // deploy MockTerminus
   const MockTerminus = await ethers.getContractFactory('MockTerminus')
   const mockTerminus = await MockTerminus.deploy()
   await mockTerminus.deployed()
   console.log('MockTerminus deployed:', mockTerminus.address)
 
+  // deploy MockERC20
+  const MockERC20 = await ethers.getContractFactory('MockERC20')
+  const mockERC20 = await MockERC20.deploy("lol", "lol")
+  await mockERC20.deployed()
+  console.log('MockERC20 deployed:', mockERC20.address)
 
 
   // deploy DiamondInit
