@@ -19,6 +19,21 @@ async function deployDiamond () {
   await diamond.deployed()
   console.log('Diamond deployed:', diamond.address)
 
+
+  // deploy MockERC721
+  const MockERC721 = await ethers.getContractFactory('MockERC721')
+  const mockERC721 = await MockERC721.deploy()
+  await mockERC721.deployed()
+  console.log('MockERC721 deployed:', mockERC721.address)
+
+  // deploy MockTerminus
+  const MockTerminus = await ethers.getContractFactory('MockTerminus')
+  const mockTerminus = await MockTerminus.deploy()
+  await mockTerminus.deployed()
+  console.log('MockTerminus deployed:', mockTerminus.address)
+
+
+
   // deploy DiamondInit
   // DiamondInit provides a function that is called when the diamond is upgraded to initialize state variables
   // Read about how the diamondCut function works here: https://eips.ethereum.org/EIPS/eip-2535#addingreplacingremoving-functions
